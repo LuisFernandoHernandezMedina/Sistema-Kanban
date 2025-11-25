@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Kanban - Gestión de Tareas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-top">
+                <h1>📋 Sistema de Gestión de Tareas</h1>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" onclick="openCategoriesModal()">
+                        🏷️ Categorías
+                    </button>
+                    <button class="btn btn-primary" onclick="openTaskModal()">
+                        ➕ Nueva Tarea
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats">
+                <div class="stat-card" style="background: linear-gradient(135deg, rgba(52, 152, 219, 0.2), rgba(41, 128, 185, 0.1));">
+                    <div class="stat-value" id="stat-total">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, rgba(241, 196, 15, 0.2), rgba(243, 156, 18, 0.1));">
+                    <div class="stat-value" id="stat-todo">0</div>
+                    <div class="stat-label">Por Hacer</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, rgba(230, 126, 34, 0.2), rgba(211, 84, 0, 0.1));">
+                    <div class="stat-value" id="stat-progress">0</div>
+                    <div class="stat-label">En Progreso</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, rgba(46, 204, 113, 0.2), rgba(39, 174, 96, 0.1));">
+                    <div class="stat-value" id="stat-done">0</div>
+                    <div class="stat-label">Completado</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, rgba(155, 89, 182, 0.2), rgba(142, 68, 173, 0.1));">
+                    <div class="stat-value" id="stat-completion">0%</div>
+                    <div class="stat-label">Progreso</div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="filters" id="filters">
+                <button class="filter-btn active" onclick="setFilter('all')">Todos</button>
+                <button class="filter-btn" onclick="setFilter('baja')">🟢 Baja</button>
+                <button class="filter-btn" onclick="setFilter('media')">🟡 Media</button>
+                <button class="filter-btn" onclick="setFilter('alta')">🔴 Alta</button>
+            </div>
+        </div>
+
+        <!-- Kanban Board -->
+        <div class="kanban-board">
+            <div class="column" data-status="todo" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                <div class="column-header">
+                    <div class="column-indicator" style="background: #f39c12;"></div>
+                    <div class="column-title">Por Hacer</div>
+                    <div class="column-count" id="count-todo">0</div>
+                </div>
+                <div class="tasks-container" id="tasks-todo"></div>
+            </div>
+
+            <div class="column" data-status="inProgress" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                <div class="column-header">
+                    <div class="column-indicator" style="background: #e67e22;"></div>
+                    <div class="column-title">En Progreso</div>
+                    <div class="column-count" id="count-inProgress">0</div>
+                </div>
+                <div class="tasks-container" id="tasks-inProgress"></div>
+            </div>
+
+            <div class="column" data-status="done" ondrop="drop(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
+                <div class="column-header">
+                    <div class="column-indicator" style="background: #27ae60;"></div>
+                    <div class="column-title">Completado</div>
+                    <div class="column-count" id="count-done">0</div>
+                </div>
+                <div class="tasks-container" id="tasks-done"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Modal -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modalTitle">Nueva Tarea</span>
+                <button class="icon-btn" onclick="closeTaskModal()" style="font-size: 1.5em;">✕</button>
+            </div>
+            
+            <form onsubmit="saveTask(event)">
+                <div class="form-group">
+                    <label class="form-label">Título *</label>
+                    <input type="text" class="form-input" id="taskTitle" required placeholder="Nombre de la tarea">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Descripción</label>
+                    <textarea class="form-textarea" id="taskDescription" placeholder="Detalles de la tarea"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Prioridad</label>
+                        <select class="form-select" id="taskPriority">
+                            <option value="baja">🟢 Baja</option>
+                            <option value="media" selected>🟡 Media</option>
+                            <option value="alta">🔴 Alta</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Categoría</label>
+                        <select class="form-select" id="taskCategory">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Fecha límite</label>
+                    <input type="date" class="form-input" id="taskDueDate">
+                </div>
+
+                <input type="hidden" id="taskId">
+                <input type="hidden" id="taskStatus" value="todo">
+
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">💾 Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeTaskModal()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Categories Modal -->
+    <div class="modal" id="categoriesModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Gestión de Categorías</span>
+                <button class="icon-btn" onclick="closeCategoriesModal()" style="font-size: 1.5em;">✕</button>
+            </div>
+
+            <div class="categories-section">
+                <div class="form-label">Categorías Actuales</div>
+                <div class="categories-list" id="categoriesList"></div>
+
+                <div class="add-category">
+                    <input type="text" class="form-input" id="newCategoryName" placeholder="Nombre de categoría">
+                    <input type="color" class="form-input" id="newCategoryColor" value="#667eea" style="width: 60px; cursor: pointer;">
+                    <button type="button" class="btn btn-primary" onclick="addCategory()">➕</button>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeCategoriesModal()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
